@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Spiderman-game-allegro.vcxproj" Id="e7a38518-4f8c-4c73-b6e8-7c5b31d30c5f" />
+</Solution>
