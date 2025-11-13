@@ -31,6 +31,8 @@ Este é um jogo simples do Homem-Aranha desenvolvido usando a biblioteca Allegro.
 
 3. **Configurar o Projeto**
 	- Verificar se está compilando corretamente com a Allegro.
+	- Caso ocorra erros na compilação: Desinstale o Allegro e instale novamente no NuGet, em modo de Debug, compile o código novamente.
+	- Em última instância, siga os passos a seguir:
 
 	- Em propriedades do projeto (apertando com o botão direito no projeto: "Spiderman-game-allegro" > Propriedades):
 		- Adicione os diretórios de inclusão do Allegro em "C/C++" > "Geral" > "Diretórios de Inclusão Adicionais": $(ProjectDir)packages\Allegro.5.2.10\build\native\include
