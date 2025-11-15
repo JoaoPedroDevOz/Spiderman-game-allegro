@@ -11,7 +11,7 @@ int main() {
     int altura_tela = 720;
 
     float frame = 0.0f;
-    int pos_x = 425, pos_y = 600 - 73;
+    int pos_x = 425, pos_y = 527;
 
     int current_frame_y = 73;   // linha do sprite de andar
 
@@ -63,6 +63,7 @@ int main() {
                 esta_pulando = true;
                 tempo_pulo = 0.0f;
                 current_frame_y = 0;  // sprite do pulo
+                pos_y -= 45;
             }
         }
 
@@ -82,11 +83,12 @@ int main() {
 
             // --- Controle de tempo do pulo ---
             if (esta_pulando) {
-                tempo_pulo += 1.0f / 60.0f;
+                tempo_pulo += 1.0f / 120.0f;
 
                 if (tempo_pulo >= duracao_pulo) {
                     esta_pulando = false;
                     current_frame_y = 73; // volta ao sprite normal
+                    pos_y = 527;
                 }
             }
         }
