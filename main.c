@@ -15,7 +15,7 @@ int main() {
 
     int current_frame_y = 73;   // linha do sprite de andar
 
-    bool esta_pulando = false;
+    bool esta_pulando = false; // variavel de pulo
     float tempo_pulo = 0.0f;
     float duracao_pulo = 0.25f; // segundos no ar
     float anim_corrida_veleocidade = 0.15;
