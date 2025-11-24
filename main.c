@@ -15,6 +15,31 @@ int main() {
 
     int current_frame_y = 73;   // linha do sprite de andar
 
+    int mapa[20][30] = {
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    };
+
+    int TILE = 32;
+
     bool esta_pulando = false; // variavel de pulo
     float tempo_pulo = 0.0f;
     float duracao_pulo = 0.25f; // segundos no ar
@@ -37,7 +62,7 @@ int main() {
     ALLEGRO_TIMER* timer = al_create_timer(1.0 / 60.0);
 
     ALLEGRO_BITMAP* spriteSpiderman = al_load_bitmap("./img/spiderman.png");
-    ALLEGRO_BITMAP* bg = al_load_bitmap("./img/bg.png");
+    ALLEGRO_BITMAP* bg = al_load_bitmap("./img/Background.png");
 
     ALLEGRO_EVENT_QUEUE* event_queue = al_create_event_queue();
     al_register_event_source(event_queue, al_get_display_event_source(display));
@@ -46,58 +71,83 @@ int main() {
     al_start_timer(timer);
 
     // --- Loop principal ---
-    while (true) {
+    bool running = true;
+
+    while (running) {
 
         ALLEGRO_EVENT event;
-        al_wait_for_event(event_queue, &event);
 
-        // Fechar janela
-        if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
-            break;
-        }
+        // processa TODOS os eventos disponíveis
+        while (al_get_next_event(event_queue, &event)) {
 
-        // --- Entrada de teclado ---
-        if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
-            if (event.keyboard.keycode == ALLEGRO_KEY_SPACE && !esta_pulando) {
-                // inicia o pulo
-                esta_pulando = true;
-                tempo_pulo = 0.0f;
-                current_frame_y = 0;  // sprite do pulo
-                pos_y -= 45;
+            // fechar janela
+            if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+                running = false;
             }
-        }
 
-        // --- Atualização por timer ---
-        if (event.type == ALLEGRO_EVENT_TIMER) {
+            // teclado
+            if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
+                if (event.keyboard.keycode == ALLEGRO_KEY_SPACE && !esta_pulando) {
+                    esta_pulando = true;
+                    tempo_pulo = 0.0f;
+                    current_frame_y = 0;
+                    pos_y -= 45;
+                }
+            }
 
-            // movimento automático
-            bg_x += bg_velocidade;
+            // timer = lógica do jogo
+            if (event.type == ALLEGRO_EVENT_TIMER) {
 
-            if (bg_x <= -1280)
-                bg_x = 0;
+                bg_x += bg_velocidade;
 
-            // animação
-            frame += anim_corrida_veleocidade;
-            if (frame >= 3)
-                frame = 0;
+                if (bg_x <= -1280)
+                    bg_x = 0;
 
-            // --- Controle de tempo do pulo ---
-            if (esta_pulando) {
-                tempo_pulo += 1.0f / 120.0f;
+                frame += anim_corrida_veleocidade;
+                if (frame >= 3)
+                    frame = 0;
 
-                if (tempo_pulo >= duracao_pulo) {
-                    esta_pulando = false;
-                    current_frame_y = 73; // volta ao sprite normal
-                    pos_y = 527;
+                if (esta_pulando) {
+                    tempo_pulo += al_get_timer_speed(timer);
+
+                    if (tempo_pulo >= duracao_pulo) {
+                        esta_pulando = false;
+                        current_frame_y = 73;
+                        pos_y = 527;
+                    }
                 }
             }
         }
 
-        // --- Renderização ---
+        // Renderização
         al_clear_to_color(al_map_rgb(255, 255, 255));
 
         al_draw_bitmap(bg, bg_x, 0, 0);
         al_draw_bitmap(bg, bg_x + 1280, 0, 0);
+
+        for (int linha = 0; linha < 20; linha++) {
+            for (int coluna = 0; coluna < 30; coluna++) {
+
+                if (mapa[linha][coluna] == 1) {
+                    al_draw_bitmap(
+                        al_load_bitmap("./img/bloco.png"),
+                        coluna * TILE,
+                        linha * TILE,
+                        0
+                    );
+                }
+                if (mapa[linha][coluna] == 2) {
+                    al_draw_bitmap(
+                        al_load_bitmap("./img/plataforma.png"),
+                        coluna * TILE,
+                        linha * TILE,
+                        0
+                    );
+                }
+            }
+        }
+
+        
 
         al_draw_text(font, al_map_rgb(0, 0, 0), 7, 7, 0, "SCORE: dragon");
         al_draw_text(font, al_map_rgb(255, 255, 255), 5, 5, 0, "SCORE: dragon");
