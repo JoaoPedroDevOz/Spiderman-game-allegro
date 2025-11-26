@@ -1,265 +1,256 @@
-﻿#define ALLEGRO_STATICLINK
+﻿#define _CRT_SECURE_NO_WARNINGS
+#define ALLEGRO_STATICLINK
+#include <stdio.h>
+#include <stdbool.h>
+#include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_image.h>
 
+typedef struct {
+	bool esta_pulando;
+	float tempo_pulo;
+	float duracao_pulo;
+	float velocidade; // velocidade horizontal / de movimento (já usada p/ animação)
+} PersonagemBase;
+
+typedef struct {
+	PersonagemBase base;
+	float frame;
+	int pos_x;
+	int pos_y;
+	int current_frame_y;
+	float vel_y; // velocidade vertical (positiva = descendo)
+} Spiderman;
+
 int main() {
+	// --- Variáveis ---
+	const int TILE = 32;
+	const int largura_tela = 1280;
+	const int altura_tela = 720;
 
-    // --- Variáveis ---
-    int largura_tela = 1280;
-    int altura_tela = 720;
+	float tile_offset_x = 0;
+	float tile_scroll_speed = -5.0f;
 
-    float frame = 0.0f;
-    int pos_x = 425, pos_y = 527;
+	float score = 0;
+	//char score_text[20];
 
-    int current_frame_y = 73;   // linha do sprite de andar
+	PersonagemBase personagemBase = {
+		.esta_pulando = false,
+		.tempo_pulo = 0.0f,
+		.duracao_pulo = 0.5f,
+		.velocidade = 5.0f
+	};
 
-    int mapa[23][40] = {
-        {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
-        {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
-        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,13,13,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,0,13,13,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0},
-        {0,0,0,0,0,0,11,11,11,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,13,0,0,0},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,11,11,11,11,11,11},
-        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,6,6,6,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-        {1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,0,0,13,0,0,0,0,0,0,0,0,0},
-        {0,0,4,0,0,0,0,0,0,0,0,0,13,13,0,0,0,0,0,0,0,0,0,0,0,0,6,6,6,6,6,6,0,0,0,0,0,0,0,0},
-        {0,0,4,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,5,5,5,0,0,0,0,0,0,0,0,0,0,0,0,5,5,0,0,0},
-        {0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,0,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,0},
-        {0,7,4,0,0,0,0,12,0,0,0,13,13,13,13,0,0,0,5,5,5,5,5,0,13,0,8,9,9,9,9,10,0,13,0,5,5,5,5,5},
-        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
-        {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
-        {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
-    };
+	Spiderman spiderman = {
+		.base = personagemBase,
+		.frame = 0.0f,
+		.pos_x = 425,
+		.pos_y = 527,
+		.current_frame_y = 65,
+		.vel_y = 0.0f
+	};
 
-    int TILE = 32;
+	// guarda altura do chão (posição Y onde o personagem fica "no chão")
+	const int altura_chao = spiderman.pos_y;
 
-    bool esta_pulando = false; // variavel de pulo
-    float tempo_pulo = 0.0f;
-    float duracao_pulo = 0.25f; // segundos no ar
-    float anim_corrida_veleocidade = 0.15;
+	// Pulo / Física
+	const float GRAVIDADE = 0.5f;         // aceleração para baixo (ajuste para sentir melhor)
+	const float IMPULSO_PULO = -11.0f;    // velocidade inicial para cima (negativa sobe)
 
-    float bg_x = 0;
-    float bg_velocidade = -5; // velocidade do fundo (negativo = anda para a esquerda)
+	// --- mapa (mantive como estava) ---
+	int mapa[23][40] = {
+		{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
+		{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,13,13,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,13,13,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,11,11,11,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,13,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,11,11,11,11,11,11},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,6,6,6,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,0,0,13,0,0,0,0,0,0,0,0,0},
+		{0,0,4,0,0,0,0,0,0,0,0,0,13,13,0,0,0,0,0,0,0,0,0,0,0,0,6,6,6,6,6,6,0,0,0,0,0,0,0,0},
+		{0,0,4,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,5,5,5,0,0,0,0,0,0,0,0,0,0,0,0,5,5,0,0,0},
+		{0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,0,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,0},
+		{0,7,4,0,0,0,0,12,0,0,0,13,13,13,13,0,0,0,5,5,5,5,5,0,13,0,8,9,9,9,9,10,0,13,0,5,5,5,5,5},
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
+		{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
+		{3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3},
+	};
 
-    // --- Inicialização ---
-    al_init();
-    al_init_font_addon();
-    al_init_image_addon();
-    al_install_keyboard();
+	float bg_x = 0;
+	float bg_velocidade = -5; // velocidade do fundo (negativo = anda para a esquerda)
 
-    ALLEGRO_DISPLAY* display = al_create_display(largura_tela, altura_tela);
-    al_set_window_position(display, 200, 200);
-    al_set_window_title(display, "Spiderman: run to the home!");
+	// --- Inicialização Allegro ---
+	if (!al_init()) return -1;
+	al_init_font_addon();
+	al_init_image_addon();
+	al_install_keyboard();
 
-    ALLEGRO_FONT* font = al_create_builtin_font();
-    ALLEGRO_TIMER* timer = al_create_timer(1.0 / 60.0);
+	ALLEGRO_DISPLAY* display = al_create_display(largura_tela, altura_tela);
+	al_set_window_position(display, 200, 200);
+	al_set_window_title(display, "Spiderman: run to the home!");
 
-    ALLEGRO_BITMAP* spriteSpiderman = al_load_bitmap("./img/Sprites/spiderman.png");
-    ALLEGRO_BITMAP* bg = al_load_bitmap("./img/Background.png");
+	ALLEGRO_FONT* font = al_create_builtin_font();
+	ALLEGRO_TIMER* timer = al_create_timer(1.0 / 60.0);
 
-    ALLEGRO_EVENT_QUEUE* event_queue = al_create_event_queue();
-    al_register_event_source(event_queue, al_get_display_event_source(display));
-    al_register_event_source(event_queue, al_get_timer_event_source(timer));
-    al_register_event_source(event_queue, al_get_keyboard_event_source());
-    al_start_timer(timer);
+	// Carrega bitmaps (caminhos mantidos)
+	ALLEGRO_BITMAP* spriteSpiderman = al_load_bitmap("./img/Sprites/spiderman.png");
+	ALLEGRO_BITMAP* bg = al_load_bitmap("./img/Background.png");
 
-    // --- Loop principal ---
-    bool running = true;
+	ALLEGRO_BITMAP* tiles[14] = { NULL };
+	tiles[1] = al_load_bitmap("./img/Tiles/piso1.png");
+	tiles[3] = al_load_bitmap("./img/Tiles/piso5.png");
+	tiles[5] = al_load_bitmap("./img/Tiles/bloco.png");
+	tiles[6] = al_load_bitmap("./img/Tiles/plataforma1.png");
+	tiles[2] = al_load_bitmap("./img/Tiles/plataforma3.png");
+	tiles[11] = al_load_bitmap("./img/Tiles/plataforma2.png");
+	tiles[4] = al_load_bitmap("./img/Objects/escada.png");
+	tiles[7] = al_load_bitmap("./img/Objects/placa.png");
+	tiles[8] = al_load_bitmap("./img/Objects/barra1.png");
+	tiles[9] = al_load_bitmap("./img/Objects/barra2.png");
+	tiles[10] = al_load_bitmap("./img/Objects/barra3.png");
+	tiles[12] = al_load_bitmap("./img/Objects/caixa.png");
+	tiles[13] = al_load_bitmap("./img/Objects/coin3.png");
 
-    while (running) {
+	// Verificação simples
+	if (!spriteSpiderman || !bg) {
+		fprintf(stderr, "Erro ao carregar bitmaps principais\n");
+		return -1;
+	}
+	for (int i = 1; i <= 13; i++) {
+		if (!tiles[i]) {
+			fprintf(stderr, "Erro ao carregar tile %d\n", i);
+			return -1;
+		}
+	}
 
-        ALLEGRO_EVENT event;
+	ALLEGRO_EVENT_QUEUE* event_queue = al_create_event_queue();
+	al_register_event_source(event_queue, al_get_display_event_source(display));
+	al_register_event_source(event_queue, al_get_timer_event_source(timer));
+	al_register_event_source(event_queue, al_get_keyboard_event_source());
+	al_start_timer(timer);
 
-        // processa TODOS os eventos disponíveis
-        while (al_get_next_event(event_queue, &event)) {
+	// --- Loop principal ---
+	bool running = true;
 
-            // fechar janela
-            if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
-                running = false;
-            }
+	while (running) {
+		ALLEGRO_EVENT event;
 
-            // teclado
-            if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
-                if (event.keyboard.keycode == ALLEGRO_KEY_SPACE && !esta_pulando) {
-                    esta_pulando = true;
-                    tempo_pulo = 0.0f;
-                    current_frame_y = 0;
-                    pos_y -= 45;
-                }
-            }
+		while (al_get_next_event(event_queue, &event)) {
+			// fechar janela
+			if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+				running = false;
+			}
 
-            // timer = lógica do jogo
-            if (event.type == ALLEGRO_EVENT_TIMER) {
+			// teclado (aperta tecla)
+			if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
+				// só inicia o pulo se NÃO estiver pulando
+				if (event.keyboard.keycode == ALLEGRO_KEY_SPACE && !spiderman.base.esta_pulando) {
+					spiderman.base.esta_pulando = true;
+					spiderman.base.tempo_pulo = 0.0f;
+					spiderman.current_frame_y = 0;
+					spiderman.vel_y = IMPULSO_PULO; // aplica impulso vertical para cima
+				}
+			}
 
-                bg_x += bg_velocidade;
+			// timer = lógica do jogo
+			if (event.type == ALLEGRO_EVENT_TIMER) {
 
-                if (bg_x <= -1280)
-                    bg_x = 0;
+				// BG scroll
+				bg_x += bg_velocidade;
+				if (bg_x <= -1280) bg_x = 0;
 
-                frame += anim_corrida_veleocidade;
-                if (frame >= 3)
-                    frame = 0;
+				// Tiles scroll
+				tile_offset_x += tile_scroll_speed;
+				if (tile_offset_x <= -1280) tile_offset_x = 0;
 
-                if (esta_pulando) {
-                    tempo_pulo += al_get_timer_speed(timer);
+				// animação (usa velocidade para modular animação)
+				spiderman.frame += spiderman.base.velocidade * 0.03f;
+				if (spiderman.frame >= 3.0f) spiderman.frame = 0.0f;
 
-                    if (tempo_pulo >= duracao_pulo) {
-                        esta_pulando = false;
-                        current_frame_y = 73;
-                        pos_y = 527;
-                    }
-                }
-            }
-        }
+				// --- PULO: aplicar física simples ---
+				if (spiderman.base.esta_pulando) {
+					spiderman.base.tempo_pulo += 1.0f / 60.0f;
 
-        // Renderização
-        al_clear_to_color(al_map_rgb(255, 255, 255));
+					// aplica velocidade vertical e gravidade
+					spiderman.pos_y += (int)spiderman.vel_y;
+					spiderman.vel_y += GRAVIDADE;
 
-        al_draw_bitmap(bg, bg_x, 0, 0);
-        al_draw_bitmap(bg, bg_x + 1280, 0, 0);
+					// se tocou o chão -> volta ao estado normal
+					if (spiderman.pos_y >= altura_chao) {
+						spiderman.pos_y = altura_chao;
+						spiderman.vel_y = 0.0f;
+						spiderman.base.esta_pulando = false;
+						spiderman.current_frame_y = 65; // volta sprite normal
+					}
+				}
 
-        for (int linha = 0; linha < 23; linha++) {
-            for (int coluna = 0; coluna < 40; coluna++) {
+				// --- COLETA DE MOEDA ---
+				int tile_col = spiderman.pos_x / TILE;
+				int tile_row = spiderman.pos_y / TILE;
 
-                if (mapa[linha][coluna] == 1) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Tiles/piso1.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 2) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Tiles/plataforma3.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 3) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Tiles/piso5.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 4) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Objects/escada.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 5) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Tiles/bloco.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 6) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Tiles/plataforma1.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 7) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Objects/placa.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 8) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Objects/barra1.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 9) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Objects/barra2.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 10) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Objects/barra3.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 11) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Tiles/plataforma2.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 12) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Objects/caixa.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-                if (mapa[linha][coluna] == 13) {
-                    al_draw_bitmap(
-                        al_load_bitmap("./img/Objects/coin3.png"),
-                        coluna * TILE,
-                        linha * TILE,
-                        0
-                    );
-                }
-            }
-        }
+				if (mapa[tile_row][tile_col] == 13) {
+					score++;
+					mapa[tile_row][tile_col] = 0; // remove moeda
+				}
+			}
+		}
 
-        al_draw_text(font, al_map_rgb(0, 0, 0), 7, 7, 0, "SCORE: spiderman");
-        al_draw_text(font, al_map_rgb(255, 255, 255), 5, 5, 0, "SCORE: spiderman");
+		// Renderização
+		al_clear_to_color(al_map_rgb(255, 255, 255));
 
-        al_draw_bitmap_region(
-            spriteSpiderman,
-            50 * (int)frame,
-            current_frame_y,
-            42, 73,
-            pos_x, pos_y,
-            0
-        );
+		al_draw_bitmap(bg, bg_x, 0, 0);
+		al_draw_bitmap(bg, bg_x + 1280, 0, 0);
 
-        al_flip_display();
-    }
+		// desenha mapa
+		for (int linha = 0; linha < 23; linha++) {
+			for (int coluna = 0; coluna < 40; coluna++) {
+				int t = mapa[linha][coluna];
+				if (t == 0) continue;
+
+				float draw_x = coluna * TILE + tile_offset_x;
+				float draw_y = linha * TILE;
+
+				// só desenha se ainda estiver na tela
+				if (draw_x > -TILE && draw_x < largura_tela)
+					al_draw_bitmap(tiles[t], draw_x, draw_y, 0);
+			}
+		}
 
 
-    // --- Finalização ---
-    al_destroy_bitmap(bg);
-    al_destroy_bitmap(spriteSpiderman);
-    al_destroy_font(font);
-    al_destroy_display(display);
-    al_destroy_event_queue(event_queue);
+		//al_draw_filled_rectangle(0, 0, 200, 40, al_map_rgb(255, 255, 255));
+		//al_draw_text(font, al_map_rgb(0, 0, 0), 10, 10, 0, score_text);
 
-    return 0;
+		// desenha spiderman
+		al_draw_bitmap_region(
+			spriteSpiderman,
+			50 * (int)spiderman.frame,
+			spiderman.current_frame_y,
+			42, 73,
+			spiderman.pos_x, spiderman.pos_y,
+			0
+		);
+
+		al_flip_display();
+	}
+
+	// --- Finalização ---
+	for (int i = 1; i <= 13; i++) al_destroy_bitmap(tiles[i]);
+	al_destroy_bitmap(bg);
+	al_destroy_bitmap(spriteSpiderman);
+	al_destroy_font(font);
+	al_destroy_display(display);
+	al_destroy_event_queue(event_queue);
+	al_destroy_timer(timer);
+
+	return 0;
 }
