@@ -28,12 +28,27 @@ int main() {
     al_init_font_addon();
     al_init_image_addon();
     al_install_keyboard();
+    al_init_ttf_addon();
+
 
     ALLEGRO_DISPLAY* display = al_create_display(largura_tela, altura_tela);
     al_set_window_position(display, 200, 200);
     al_set_window_title(display, "Spiderman: run to the home!");
 
-    ALLEGRO_FONT* font = al_create_builtin_font();
+    // Fonte para o titulo (maior)
+    ALLEGRO_FONT* font_titulo = al_load_font("arial.ttf", 48, 0); 
+    if (!font_titulo) {
+        font_titulo = al_create_builtin_font();
+        printf("Arial não encontrada, usando fonte padrão para título\n");
+    }
+
+    // Fonte para o menu (menor)  
+    ALLEGRO_FONT* font_menu = al_load_font("arial.ttf", 24, 0);    
+    if (!font_menu) {
+        font_menu = al_create_builtin_font();
+        printf("Arial não encontrada, usando fonte padrão para menu\n");
+    }
+
     ALLEGRO_TIMER* timer = al_create_timer(1.0 / 60.0);
 
     ALLEGRO_BITMAP* spriteSpiderman = al_load_bitmap("./img/spiderman.png");
@@ -46,11 +61,65 @@ int main() {
     al_start_timer(timer);
 
     // --- Loop principal ---
-    while (true) {
-
+    while (1) {
         ALLEGRO_EVENT event;
         al_wait_for_event(event_queue, &event);
 
+        // menu
+        if (gameState == MENU) {
+            // key down vem de apertar alguma tecla e key up soltar (qualquer tecla).
+            if (event.type == ALLEGRO_EVENT_KEY_DOWN)
+            {   //aqui verifica se foi a seta para cima e o outro if, a seta para baixo.
+                if (event.keyboard.keycode == ALLEGRO_KEY_UP && key_released) {
+                    menu_selection = 0;
+                    key_released = 0;
+                }
+                else if (event.keyboard.keycode == ALLEGRO_KEY_DOWN && key_released) {
+                    menu_selection = 1;
+                    key_released = 0;
+                }
+                else if (event.keyboard.keycode == ALLEGRO_KEY_ENTER) {
+                    if (menu_selection == 0) {
+                        gameState = PLAYING; // Inicia o jogo
+                    }
+                    else if (menu_selection == 1) {
+                        break; // Sai do jogo
+                    }
+                }
+            }
+
+            if (event.type == ALLEGRO_EVENT_KEY_UP) {
+                key_released = 1;
+            }
+
+			// aqui vai fundo temporario do menu
+            al_clear_to_color(al_map_rgb(0, 0, 0));
+
+            // Título
+            al_draw_text(font_titulo, al_map_rgb(255, 0, 0), largura_tela / 2, 120, ALLEGRO_ALIGN_CENTER,
+                "SPIDERMAN: RUN TO THE HOME!");
+            ;
+
+            // Opções do menu
+            if (menu_selection == 0) {
+                al_draw_text(font_menu, al_map_rgb(255, 0, 0), largura_tela / 2, 350, ALLEGRO_ALIGN_CENTER, "> JOGAR <");
+            }
+            else {
+                al_draw_text(font_menu, al_map_rgb(255, 255, 255), largura_tela / 2, 350, ALLEGRO_ALIGN_CENTER, "JOGAR");
+            }
+
+            if (menu_selection == 1) {
+                al_draw_text(font_menu, al_map_rgb(255, 0, 0), largura_tela / 2, 400, ALLEGRO_ALIGN_CENTER, "> SAIR <");
+            }
+            else {
+                al_draw_text(font_menu, al_map_rgb(255, 255, 255), largura_tela / 2, 400, ALLEGRO_ALIGN_CENTER, "SAIR");
+            }
+
+            al_flip_display();
+            continue; // IMPORTANTE: Pula o resto do loop se estiver no menu
+        }
+
+        // --- RESTO DO JOGO ---
         // Fechar janela
         if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
             break;
@@ -68,7 +137,6 @@ int main() {
 
         // --- Atualização por timer ---
         if (event.type == ALLEGRO_EVENT_TIMER) {
-
             // movimento automático
             bg_x += bg_velocidade;
 
@@ -91,14 +159,14 @@ int main() {
             }
         }
 
-        // --- Renderização ---
+        // --- Renderização DO JOGO ---
         al_clear_to_color(al_map_rgb(255, 255, 255));
 
         al_draw_bitmap(bg, bg_x, 0, 0);
         al_draw_bitmap(bg, bg_x + 1280, 0, 0);
 
-        al_draw_text(font, al_map_rgb(0, 0, 0), 7, 7, 0, "SCORE: dragon");
-        al_draw_text(font, al_map_rgb(255, 255, 255), 5, 5, 0, "SCORE: dragon");
+        al_draw_text(font_menu, al_map_rgb(0, 0, 0), 7, 7, 0, "SCORE: dragon");
+        al_draw_text(font_menu, al_map_rgb(255, 255, 255), 5, 5, 0, "SCORE: dragon");
 
         al_draw_bitmap_region(
             spriteSpiderman,
@@ -112,13 +180,14 @@ int main() {
         al_flip_display();
     }
 
-
     // --- Finalização ---
     al_destroy_bitmap(bg);
     al_destroy_bitmap(spriteSpiderman);
-    al_destroy_font(font);
+    al_destroy_font(font_titulo);
+    al_destroy_font(font_menu);
     al_destroy_display(display);
     al_destroy_event_queue(event_queue);
+    al_destroy_timer(timer);
 
     return 0;
 }
