@@ -13,8 +13,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-int TILE = 32; 
+int TILE = 32;
 int larguraMapa = 40;
+int moedas_coletadas = 0;
 
 typedef struct {
 	bool esta_pulando;
@@ -35,116 +36,19 @@ typedef struct {
 } Spiderman;
 
 
-int tileAt(int mapa[23][40], int px, int py) {
-	int col = px / TILE;
-	int row = py / TILE;
-
-	if (row < 0 || row >= 23 || col < 0 || col >= 40)
-		return 0;
-
-	return mapa[row][col];
+bool tileSolido(int id) {
+	return (
+		id == 1 ||
+		id == 2 ||
+		id == 3 ||
+		id == 5 ||
+		id == 6 ||
+		id == 11
+		);
 }
 
-bool isSolid(int tile) {
-	return (tile == 1 || tile == 5); // chão e plataforma
-}
-
-void updateHorizontalPhysics(int mapa[23][40], Spiderman* s, float vel_x, float tile_offset_x) {
-	// move horizontalmente
-	s->pos_x += vel_x;
-
-	// verificar colisões horizontais usando o centro vertical do personagem
-	float left = s->pos_x;
-	float right = s->pos_x + SPIDERMAN_W;
-	float centerY = s->pos_y + SPIDERMAN_H / 2.0f;
-
-	// converter posição da tela -> posição no mapa
-	int tileLeft = tileAt(mapa, left - tile_offset_x, centerY);
-	int tileRight = tileAt(mapa, right - tile_offset_x, centerY);
-
-	if (isSolid(tileLeft)) {
-		int col = (int)floor((left - tile_offset_x) / TILE);
-		s->pos_x = (col + 1) * TILE + tile_offset_x;
-	}
-
-	if (isSolid(tileRight)) {
-		int col = (int)floor((right - tile_offset_x) / TILE);
-		s->pos_x = col * TILE - SPIDERMAN_W + tile_offset_x;
-	}
-}
-
-void shiftMapAndGenerateNewColumn(int mapa[23][40]) {
-
-	// 1. Desloca tudo 1 coluna à esquerda
-	for (int linha = 0; linha < 23; linha++) {
-		for (int col = 0; col < 39; col++) {
-			mapa[linha][col] = mapa[linha][col + 1];
-		}
-	}
-
-	int colNova = 39;
-
-	// 2. Limpa a nova coluna
-	for (int linha = 0; linha < 23; linha++) {
-		mapa[linha][colNova] = 0;
-	}
-
-	// 3. Mantém bloco de chão fixo
-	mapa[19][colNova] = 1;
-
-	// 4. Chance de criar plataforma acima do chão
-	int criaPlataforma = rand() % 100 < 10;  // 25% de chance
-	int alturaPlataforma = 14 + (rand() % 3); // linha 14, 15 ou 16
-
-	if (criaPlataforma) {
-		mapa[alturaPlataforma][colNova] = 5; // bloco da plataforma
-	}
-
-	// 5. Criar estrela em cima do chão ou da plataforma
-	// A estrela vem 1 tile acima do obstáculo
-	int criaEstrela = rand() % 100 < 35; // 35% chance
-
-	if (criaEstrela) {
-
-		// se existe plataforma, estrela fica em cima da plataforma
-		if (criaPlataforma) {
-			mapa[alturaPlataforma - 1][colNova] = 13;
-		}
-		// senão, estrela fica em cima do chão
-		else {
-			mapa[18][colNova] = 13;
-		}
-	}
-}
-
-void checarColisaoChao(Spiderman* p, int mapa[][40], float tile_offset_x, int TILE) {
-
-	float posNoMapa = (p->pos_x - tile_offset_x);
-
-	// largura total do mapa em pixels
-	int larguraMapaPx = 40 * TILE;
-
-	// mapeia Spiderman para dentro do mapa repetido
-	if (posNoMapa < 0)
-		posNoMapa = fmod(posNoMapa + larguraMapaPx * 10000, larguraMapaPx);
-
-	int coluna = ((int)posNoMapa / TILE) % 40;
-	int linha = (p->pos_y + p->altura) / TILE;
-
-	// segurança
-	if (linha < 0 || linha >= 23) return;
-	if (coluna < 0 || coluna >= 40) return;
-
-	int t = mapa[linha][coluna];
-
-	if (t != 0) { // tile sólida
-		float topoTile = linha * TILE;
-
-		// posiciona o personagem em cima da tile
-		p->pos_y = topoTile - p->altura;
-		p->vel_y = 0;
-		p->base.esta_pulando = false;
-	}
+bool tileMoeda(int id) {
+	return id == 13;
 }
 
 void renderizarMapaRepetindo(
@@ -158,45 +62,35 @@ void renderizarMapaRepetindo(
 	int TILE
 ) {
 	int larguraMapa = colunas * TILE;
-	
+
 	int copia = 100;
 	while (copia != 0) {
 		//for (int copia = 0; copia < 20; copia++) {
 		copia--;
-			float offset = tile_offset_x + copia * larguraMapa;
+		float offset = tile_offset_x + copia * larguraMapa;
 
-			for (int linha = 0; linha < linhas; linha++) {
-				for (int coluna = 0; coluna < colunas; coluna++) {
+		for (int linha = 0; linha < linhas; linha++) {
+			for (int coluna = 0; coluna < colunas; coluna++) {
 
-					int t = mapa[linha][coluna];
-					if (t == 0) continue;
+				int t = mapa[linha][coluna];
+				if (t == 0) continue;
 
-					float draw_x = coluna * TILE + offset;
-					float draw_y = linha * TILE;
+				float draw_x = coluna * TILE + offset;
+				float draw_y = linha * TILE;
 
-					if (draw_x > -TILE && draw_x < largura_tela)
-						al_draw_bitmap(tiles[t], draw_x, draw_y, 0);
-				}
+				if (draw_x > -TILE && draw_x < largura_tela)
+					al_draw_bitmap(tiles[t], draw_x, draw_y, 0);
 			}
+		}
 		//}
 	}
-	
+
 
 	// quando o mapa inteiro sair da tela, reseta
 	if (tile_offset_x <= -larguraMapa)
 		tile_offset_x += larguraMapa;
 }
 
-bool tileSolido(int id) {
-	return (
-		id == 1 ||
-		id == 2 ||
-		id == 3 ||
-		id == 5 ||
-		id == 6 ||
-		id == 11
-		);
-}
 
 int main() {
 	// --- Variáveis ---
@@ -421,6 +315,50 @@ int main() {
 				//	score++;
 				//	mapa[tile_row][tile_col] = 0; // remove moeda
 				//}
+
+				// --- COLETA DE MOEDAS ---
+				{
+					// Posição real do personagem no mapa (corrigindo scroll)
+					float posMapaX1 = (spiderman.pos_x - tile_offset_x + 5);
+					float posMapaX2 = (spiderman.pos_x - tile_offset_x + 42 - 5);
+
+					float posMapaY1 = spiderman.pos_y + 5;
+					float posMapaY2 = spiderman.pos_y + 73 - 5;
+
+					int larguraMapaPx = 40 * TILE;
+
+					// corrigir wrap do mapa
+					posMapaX1 = fmod(posMapaX1 + larguraMapaPx * 10000, larguraMapaPx);
+					posMapaX2 = fmod(posMapaX2 + larguraMapaPx * 10000, larguraMapaPx);
+
+					// converter para tiles
+					int col1 = posMapaX1 / TILE;
+					int col2 = posMapaX2 / TILE;
+
+					int row1 = posMapaY1 / TILE;
+					int row2 = posMapaY2 / TILE;
+
+					// --- verificar cada tile tocado ---
+					int tiles[4][2] = {
+						{row1, col1}, {row1, col2},
+						{row2, col1}, {row2, col2}
+					};
+
+					for (int i = 0; i < 4; i++) {
+						int r = tiles[i][0];
+						int c = tiles[i][1];
+
+						// limites de segurança
+						if (r < 0 || r > 22 || c < 0 || c > 39) continue;
+
+						if (tileMoeda(mapa[r][c])) {
+							mapa[r][c] = 0;           // remove moeda do mapa
+							moedas_coletadas++;
+							printf("Moeda coletada! Total: %d\n", moedas_coletadas);
+						}
+					}
+				}
+
 			}
 		}
 
