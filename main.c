@@ -147,25 +147,31 @@ int coletarMoedas(Spiderman* spiderman, int mapa[][40], int TILE, int tile_offse
 	return moedas_coletadas;
 }
 
-void gerarMoedasAleatoriasTempoReal(int mapa[][40], float offset, int TILE, int largura_tela, int numero_copia)
+void gerarMoedasAleatoriasTempoReal(int mapa[][40], float offset, int TILE, int largura_tela, int numero_copia, float pos_x_personagem)
 {
 	// Probabilidade base
 	if (rand() % 25 != 0) return;
 
-	// Define a largura das extremidades (ajuste conforme necessário)
-	int largura_extremidade = 8;
+	int largura_extremidade_direita = 18;
 
-	int coluna;
-	int lado = rand() % 2; // 0 = esquerda, 1 = direita
+	// Calcula a coluna inicial baseada na posição do personagem
+	int coluna_personagem = (int)((pos_x_personagem - offset) / TILE);
+	int coluna_inicial = coluna_personagem + 20;
 
-	if (lado == 0) {
-		// Extremidade esquerda
-		coluna = rand() % largura_extremidade;
+	// Garante que não ultrapasse o limite do mapa
+	if (coluna_inicial < 0) coluna_inicial = 0;
+	if (coluna_inicial >= 40) return; // Personagem já está no final do mapa
+
+	// Coluna final (extremidade direita do mapa)
+	int coluna_final = 39;
+
+	// Se a área é muito grande, limita para as últimas colunas
+	if (coluna_final - coluna_inicial > largura_extremidade_direita) {
+		coluna_inicial = coluna_final - largura_extremidade_direita + 1;
 	}
-	else {
-		// Extremidade direita  
-		coluna = (40 - largura_extremidade) + (rand() % largura_extremidade);
-	}
+
+	// Escolhe uma coluna aleatória na área à direita
+	int coluna = coluna_inicial + (rand() % (coluna_final - coluna_inicial + 1));
 
 	// Posição real da coluna na tela
 	float x_col = coluna * TILE + offset;
@@ -197,7 +203,8 @@ void renderizarMapaRepetindo(
 	int largura_tela,
 	int altura_tela,
 	int TILE,
-	int posicao_bg_x
+	int posicao_bg_x,
+	float pos_x_personagem  // Adicione este parâmetro
 ) {
 	int larguraMapa = colunas * TILE;
 
@@ -207,9 +214,8 @@ void renderizarMapaRepetindo(
 		float offset = tile_offset_x + copia * larguraMapa;
 
 		// gerar moedas em tempo real para essa cópia do mapa
-		// Passa o número da cópia (100, 99, 98, etc) para controlar a geração
 		if (offset + larguraMapa > -TILE && offset < largura_tela + TILE) {
-			gerarMoedasAleatoriasTempoReal(mapa, offset, TILE, largura_tela, copia);
+			gerarMoedasAleatoriasTempoReal(mapa, offset, TILE, largura_tela, copia, pos_x_personagem);
 		}
 
 		for (int linha = 0; linha < linhas; linha++) {
@@ -401,7 +407,7 @@ int main() {
 
 		renderizarMapaRepetindo(
 			mapa, tiles, tile_offset_x,
-			23, 40, largura_tela, altura_tela, TILE, bg_x
+			23, 40, largura_tela, altura_tela, TILE, bg_x, spiderman.pos_x
 		);
 
 		//al_draw_filled_rectangle(0, 0, 200, 40, al_map_rgb(255, 255, 255));
