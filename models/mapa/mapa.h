@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <allegro5/allegro.h>
-#include "personagem.h"
+#include "../personagem/personagem.h"
 
 // ---------- CONSTANTES DO MAPA ----------
 #define MAPA_LINHAS 23

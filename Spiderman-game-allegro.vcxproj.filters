@@ -13,33 +13,45 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Arquivos de Origem\models">
+      <UniqueIdentifier>{c6cee255-02b9-43e4-84bd-86356df22743}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arquivos de Origem\models\personagem">
+      <UniqueIdentifier>{af1ebc0b-d817-4e04-b74f-279412af5027}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arquivos de Origem\models\menu">
+      <UniqueIdentifier>{c850af8f-b20c-40d9-8bb8-ee3549b2c535}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arquivos de Origem\models\mapa">
+      <UniqueIdentifier>{e2116534-5653-4aae-a36b-b7562ab83640}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
-    <ClCompile Include="personagem.c">
-      <Filter>Arquivos de Origem</Filter>
+    <ClCompile Include="models\personagem\personagem.c">
+      <Filter>Arquivos de Origem\models\personagem</Filter>
     </ClCompile>
-    <ClCompile Include="mapa.c">
-      <Filter>Arquivos de Origem</Filter>
+    <ClCompile Include="models\menu\menu.c">
+      <Filter>Arquivos de Origem\models\menu</Filter>
     </ClCompile>
-    <ClCompile Include="menu.c">
-      <Filter>Arquivos de Origem</Filter>
+    <ClCompile Include="models\mapa\mapa.c">
+      <Filter>Arquivos de Origem\models\mapa</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="personagem.h">
-      <Filter>Arquivos de Origem</Filter>
+    <ClInclude Include="models\personagem\personagem.h">
+      <Filter>Arquivos de Origem\models\personagem</Filter>
     </ClInclude>
-    <ClInclude Include="mapa.h">
-      <Filter>Arquivos de Origem</Filter>
+    <ClInclude Include="models\menu\menu.h">
+      <Filter>Arquivos de Origem\models\menu</Filter>
     </ClInclude>
-    <ClInclude Include="menu.h">
-      <Filter>Arquivos de Origem</Filter>
+    <ClInclude Include="models\mapa\mapa.h">
+      <Filter>Arquivos de Origem\models\mapa</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

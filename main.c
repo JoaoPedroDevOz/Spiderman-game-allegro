@@ -12,9 +12,9 @@
 #include <allegro5/allegro_image.h>
 #include <stdlib.h>
 #include <math.h>
-#include "personagem.h"
-#include "mapa.h"
-#include "menu.h"
+#include "./models/personagem/personagem.h"
+#include "./models/mapa/mapa.h"
+#include "./models/menu/menu.h"
 
 enum GameState {
 	MENU,
@@ -134,7 +134,7 @@ int main() {
 	tiles[13] = al_load_bitmap("./img/Objects/coin3.png");
 
 	// Verificação de recursos
-	if (!spriteSpiderman || !bg) {
+	if (!spriteSpiderman || !bg || !bg_menu) {
 		fprintf(stderr, "Erro ao carregar bitmaps principais\n");
 		return -1;
 	}
