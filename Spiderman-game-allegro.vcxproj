@@ -108,9 +108,17 @@ shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
+    <ClCompile Include="mapa.c" />
+    <ClCompile Include="menu.c" />
+    <ClCompile Include="personagem.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="mapa.h" />
+    <ClInclude Include="menu.h" />
+    <ClInclude Include="personagem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
