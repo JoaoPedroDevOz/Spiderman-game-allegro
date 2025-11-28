@@ -176,7 +176,7 @@ int main() {
                 tempo_pulo = 0.0f;
                 current_frame_y = 0;  // sprite do pulo
             }
-            // ⭐ VOLTAR AO MENU DURANTE O JOGO
+            // voltar para o menu
             else if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
                 gameState = MENU;
             }
