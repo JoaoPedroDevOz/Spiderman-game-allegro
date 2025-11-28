@@ -54,47 +54,6 @@ bool tileMoeda(int id) {
 	return id == 13;
 }
 
-void renderizarMapaRepetindo(
-	int mapa[][40],
-	ALLEGRO_BITMAP* tiles[],
-	float tile_offset_x,
-	int linhas,
-	int colunas,
-	int largura_tela,
-	int altura_tela,
-	int TILE
-) {
-	int larguraMapa = colunas * TILE;
-
-	int copia = 100;
-	while (copia != 0) {
-		//for (int copia = 0; copia < 20; copia++) {
-		copia--;
-		float offset = tile_offset_x + copia * larguraMapa;
-
-		for (int linha = 0; linha < linhas; linha++) {
-			for (int coluna = 0; coluna < colunas; coluna++) {
-
-				int t = mapa[linha][coluna];
-				if (t == 0) continue;
-
-				float draw_x = coluna * TILE + offset;
-				float draw_y = linha * TILE;
-
-				if (draw_x > -TILE && draw_x < largura_tela)
-					al_draw_bitmap(tiles[t], draw_x, draw_y, 0);
-			}
-		}
-		//}
-	}
-
-
-	// quando o mapa inteiro sair da tela, reseta
-	if (tile_offset_x <= -larguraMapa)
-		tile_offset_x += larguraMapa;
-}
-
-
 void checarColisaoComTiles(Spiderman* spiderman, int mapa[][40], int TILE, float tile_offset_x)
 {
 	float posMapaX = spiderman->pos_x - tile_offset_x;
@@ -144,7 +103,8 @@ void checarColisaoComTiles(Spiderman* spiderman, int mapa[][40], int TILE, float
 }
 
 int coletarMoedas(Spiderman* spiderman, int mapa[][40], int TILE, int tile_offset_x) {
-	// Posição real do personagem no mapa 
+	// Captura a posição do personagem no mapa
+	// Sem o offset do tile, a posição X estaria errada, muito à direita do personagem
 	float posMapaX1 = (spiderman->pos_x - tile_offset_x + 5);
 	float posMapaX2 = (spiderman->pos_x - tile_offset_x + 42 - 5);
 
@@ -153,18 +113,17 @@ int coletarMoedas(Spiderman* spiderman, int mapa[][40], int TILE, int tile_offse
 
 	int larguraMapaPx = 40 * TILE;
 
-	// corrigir wrap do mapa
+	// wrap X do mapa para mapas repetidos, garantindo a posição dentro do limite.
 	posMapaX1 = fmod(posMapaX1 + larguraMapaPx * 10000, larguraMapaPx);
 	posMapaX2 = fmod(posMapaX2 + larguraMapaPx * 10000, larguraMapaPx);
 
-	// converter para tiles
 	int col1 = posMapaX1 / TILE;
 	int col2 = posMapaX2 / TILE;
 
 	int row1 = posMapaY1 / TILE;
 	int row2 = posMapaY2 / TILE;
 
-	// --- verificar cada tile tocado ---
+	// limites
 	int tiles[4][2] = {
 		{row1, col1}, {row1, col2},
 		{row2, col1}, {row2, col2}
@@ -174,18 +133,104 @@ int coletarMoedas(Spiderman* spiderman, int mapa[][40], int TILE, int tile_offse
 		int r = tiles[i][0];
 		int c = tiles[i][1];
 
-		// limites de segurança
+		// limites do mapa, verificação extra
 		if (r < 0 || r > 22 || c < 0 || c > 39) continue;
 
 		if (tileMoeda(mapa[r][c])) {
-			mapa[r][c] = 0;           // remove moeda do mapa
+
+			// remove moeda atual
+			mapa[r][c] = 0;
+
 			moedas_coletadas++;
 		}
-
 	}
 	return moedas_coletadas;
 }
 
+void gerarMoedasAleatoriasTempoReal(int mapa[][40], float offset, int TILE, int largura_tela, int numero_copia)
+{
+	// Probabilidade base
+	if (rand() % 25 != 0) return;
+
+	// Define a largura das extremidades (ajuste conforme necessário)
+	int largura_extremidade = 8;
+
+	int coluna;
+	int lado = rand() % 2; // 0 = esquerda, 1 = direita
+
+	if (lado == 0) {
+		// Extremidade esquerda
+		coluna = rand() % largura_extremidade;
+	}
+	else {
+		// Extremidade direita  
+		coluna = (40 - largura_extremidade) + (rand() % largura_extremidade);
+	}
+
+	// Posição real da coluna na tela
+	float x_col = coluna * TILE + offset;
+
+	// Só gera se a coluna está visível ou prestes a entrar na tela
+	if (x_col < -TILE || x_col > largura_tela + TILE)
+		return;
+
+	// Procura um tile sólido com espaço livre acima
+	for (int linha = 1; linha < 23; linha++) {
+		int abaixo = mapa[linha][coluna];
+		int acima = mapa[linha - 1][coluna];
+
+		bool solido = tileSolido(abaixo);
+
+		if (solido && acima == 0) {
+			mapa[linha - 1][coluna] = 13;
+			return;
+		}
+	}
+}
+
+void renderizarMapaRepetindo(
+	int mapa[][40],
+	ALLEGRO_BITMAP* tiles[],
+	float tile_offset_x,
+	int linhas,
+	int colunas,
+	int largura_tela,
+	int altura_tela,
+	int TILE,
+	int posicao_bg_x
+) {
+	int larguraMapa = colunas * TILE;
+
+	int copia = 100;
+	while (copia != 0) {
+		copia--;
+		float offset = tile_offset_x + copia * larguraMapa;
+
+		// gerar moedas em tempo real para essa cópia do mapa
+		// Passa o número da cópia (100, 99, 98, etc) para controlar a geração
+		if (offset + larguraMapa > -TILE && offset < largura_tela + TILE) {
+			gerarMoedasAleatoriasTempoReal(mapa, offset, TILE, largura_tela, copia);
+		}
+
+		for (int linha = 0; linha < linhas; linha++) {
+			for (int coluna = 0; coluna < colunas; coluna++) {
+
+				int t = mapa[linha][coluna];
+				if (t == 0) continue;
+
+				float draw_x = coluna * TILE + offset;
+				float draw_y = linha * TILE;
+
+				if (draw_x > -TILE && draw_x < largura_tela)
+					al_draw_bitmap(tiles[t], draw_x, draw_y, 0);
+			}
+		}
+	}
+
+	// quando o mapa inteiro sair da tela, reseta
+	if (tile_offset_x <= -larguraMapa)
+		tile_offset_x += larguraMapa;
+}
 
 int main() {
 	// --- Variáveis ---
@@ -356,7 +401,7 @@ int main() {
 
 		renderizarMapaRepetindo(
 			mapa, tiles, tile_offset_x,
-			23, 40, largura_tela, altura_tela, TILE
+			23, 40, largura_tela, altura_tela, TILE, bg_x
 		);
 
 		//al_draw_filled_rectangle(0, 0, 200, 40, al_map_rgb(255, 255, 255));
